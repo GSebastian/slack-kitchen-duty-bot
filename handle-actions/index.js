@@ -3,17 +3,17 @@ var admin = require("firebase-admin");
 var serviceAccount = require("./kitchen-duty-423cd-firebase-adminsdk-cvvco-56cbd3f1b5.json");
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://kitchen-duty-423cd.firebaseio.com"
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://kitchen-duty-423cd.firebaseio.com"
 });
 
 var db = admin.database();
 
 exports.handler = (event, context, callback) => {
+    callback(null, { text: "Please wait" })
+    context.done();
+
     if (event.actions[0].value == "who") {
-        callback(null, { text : "Please wait" })
-        context.done()
-        
         findTeamForThisWeek(team => {
             var teamsResponse = "This week\'s team is " + team.teamName + " formed of: "
             for (var i = 0; i < team.members.length; i++) {
@@ -28,15 +28,54 @@ exports.handler = (event, context, callback) => {
                 url: event.response_url,
                 method: "POST",
                 json: true,
-                body: { text : teamsResponse }
-            }, function (error, response, body){
+                body: { text: teamsResponse }
+            }, function (error, response, body) {
                 console.log(response);
             });
         })
     } else if (event.actions[0].value == "nudge") {
-        callback(null, {
-            text: "Thanks! I\'ve just sent them a short reminder to sort the kitchen."
-        })
+        findTeamForThisWeek(team => {
+            var teamsResponse = "This week\'s team is " + team.teamName + " formed of: "
+            for (var i = 0; i < team.members.length; i++) {
+                request({
+                    url: "https://slack.com/api/im.open",
+                    method: "POST",
+                    json: true,
+                    headers: {
+                        "Authorization": "Bearer xoxp-2661812405-28277157233-359158844402-7bc02a78b9908613aedce544eea690d2"
+                    },
+                    body: {
+                        user: team.members[i].slackUserId
+                    }
+                }, function (error, response, body) {
+                    if (error == null) {
+                        request({
+                            url: "https://slack.com/api/chat.postMessage",
+                            method: "POST",
+                            json: true,
+                            headers: {
+                                "Authorization": "Bearer xoxp-2661812405-28277157233-359158844402-7bc02a78b9908613aedce544eea690d2"
+                            },
+                            body: {
+                                channel: body.channel.id,
+                                text: "🚨🚨🚨 Red alert! The kitchen is filthy! 🚨🚨🚨\n\n"
+                                    + "Ok, maybe that was too dramatic, but would you mind making sure everything's ok in there? 👌"
+                            }
+                        }, function (error, response, body) {
+                            console.log(response);
+                        });
+                    }
+                });
+            }
+            request({
+                url: event.response_url,
+                method: "POST",
+                json: true,
+                body: { text: "I've just sent a message to everyone in this week\'s team! 💨 Chop chop! 💨 " }
+            }, function (error, response, body) {
+                console.log(response);
+            });
+        });
     } else {
         callback("Bad input", null)
     }
@@ -44,7 +83,7 @@ exports.handler = (event, context, callback) => {
 
 function weeksFromStartDate(callback) {
     var ref = db.ref("/flamelink/environments/production/content/teamPlanning/en-US");
-    ref.once("value", function(data) {
+    ref.once("value", function (data) {
         let teamPlanningObject = data.val();
         let startDate = new Date(teamPlanningObject.startTime);
 
@@ -59,7 +98,7 @@ function weeksFromStartDate(callback) {
 
 function numberOfTeams(callback) {
     var ref = db.ref("/flamelink/environments/production/content/team/en-US");
-    ref.once("value", function(data) {
+    ref.once("value", function (data) {
         callback(data.numChildren());
     });
 }
@@ -71,8 +110,8 @@ function findTeamForThisWeek(callback) {
             let teamIndex = weeksValue % number + 1;
             var teamsRef = db.ref("/flamelink/environments/production/content/team/en-US");
 
-            teamsRef.once("value", function(snapshot) {
-                snapshot.forEach(function(data) {
+            teamsRef.once("value", function (snapshot) {
+                snapshot.forEach(function (data) {
                     let teamObject = data.val();
                     if (teamObject.order == teamIndex) {
                         callback(teamObject);
