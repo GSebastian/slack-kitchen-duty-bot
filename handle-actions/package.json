@@ -1,5 +1,5 @@
 {
-  "name": "slack-kitchen-duty-bot-get-team",
+  "name": "slack-kitchen-duty-bot-handle-actions",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
