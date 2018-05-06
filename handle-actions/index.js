@@ -8,7 +8,6 @@ admin.initializeApp({
 });
 
 var db = admin.database();
-// var ref = db.ref("/flamelink/environments/production/content/team/en-US");
 
 exports.handler = (event, context, callback) => {
     if (event.actions[0].value == "who") {
