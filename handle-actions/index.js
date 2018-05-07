@@ -10,11 +10,13 @@ admin.initializeApp({
 var db = admin.database();
 
 exports.handler = (event, context, callback) => {
-    callback(null, { text: "Please wait" })
-    context.done();
+    console.log(event);
+    let input = event
+    console.log(input);
+    findTeamForThisWeek(team => {
+        console.log("Found team");
+        if (input.actions[0].value == "who") {
 
-    if (event.actions[0].value == "who") {
-        findTeamForThisWeek(team => {
             var teamsResponse = "This week\'s team is " + team.teamName + " formed of: "
             for (var i = 0; i < team.members.length; i++) {
                 teamsResponse += "<@" + team.members[i].slackUserId + ">";
@@ -24,17 +26,23 @@ exports.handler = (event, context, callback) => {
                     teamsResponse += ", ";
                 }
             }
+            console.log("Teams response: " + teamsResponse);
             request({
-                url: event.response_url,
+                url: input.response_url,
                 method: "POST",
                 json: true,
                 body: { text: teamsResponse }
             }, function (error, response, body) {
-                console.log(response);
+                console.log("Who response " + body + " error " + error);
+                if (error) {
+                    callback(error, null);
+                    context.fail(error);
+                } else {
+                    callback(null, "Successfully made \'who\' request");
+                    context.succeed();
+                }
             });
-        })
-    } else if (event.actions[0].value == "nudge") {
-        findTeamForThisWeek(team => {
+        } else if (input.actions[0].value == "nudge") {
             var teamsResponse = "This week\'s team is " + team.teamName + " formed of: "
             for (var i = 0; i < team.members.length; i++) {
                 request({
@@ -58,27 +66,31 @@ exports.handler = (event, context, callback) => {
                             },
                             body: {
                                 channel: body.channel.id,
-                                text: "🚨🚨🚨 Red alert! The kitchen is filthy! 🚨🚨🚨\n\n"
+                                text: "🚨🚨🚨 Red alert! The kitchen is filthy! 🚨🚨🚨\n\n\n"
                                     + "Ok, maybe that was too dramatic, but would you mind making sure everything's ok in there? 👌"
                             }
                         }, function (error, response, body) {
-                            console.log(response);
+                            console.log(body);
                         });
                     }
                 });
             }
             request({
-                url: event.response_url,
+                url: input.response_url,
                 method: "POST",
                 json: true,
                 body: { text: "I've just sent a message to everyone in this week\'s team! 💨 Chop chop! 💨 " }
             }, function (error, response, body) {
-                console.log(response);
+                if (error) {
+                    callback(error, null);
+                } else {
+                    callback(error, "Successfully made \'nudge\' request");
+                }
             });
-        });
-    } else {
-        callback("Bad input", null)
-    }
+        } else {
+            callback("Bad input", null)
+        }
+    })
 };
 
 function weeksFromStartDate(callback) {
