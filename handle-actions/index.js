@@ -1,18 +1,17 @@
-var request = require('request');
+var request = require("request");
 var admin = require("firebase-admin");
-var serviceAccount = require("./kitchen-duty-423cd-firebase-adminsdk-cvvco-56cbd3f1b5.json");
+var environment = require("./environment.js");
 
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://kitchen-duty-423cd.firebaseio.com"
+    credential: admin.credential.cert(environment.getFirebaseServiceAccount()),
+    databaseURL: environment.getFirebaseDatabaseUrl()
 });
 
 var db = admin.database();
 
 exports.handler = (event, context, callback) => {
     console.log(event);
-    let input = event
-    console.log(input);
+    let input = event;
     findTeamForThisWeek(team => {
         console.log("Found team");
         if (input.actions[0].value == "who") {
@@ -97,12 +96,15 @@ function weeksFromStartDate(callback) {
     var ref = db.ref("/flamelink/environments/production/content/teamPlanning/en-US");
     ref.once("value", function (data) {
         let teamPlanningObject = data.val();
-        let startDate = new Date(teamPlanningObject.startTime);
 
-        var oneDay = 24 * 60 * 60 * 1000;
+        console.log("TeamPlanning object startTime: " + teamPlanningObject.startTime);
+
+        let startDate = new Date(teamPlanningObject.startTime);
         var currentDate = new Date();
 
-        var diffWeeks = Math.round(Math.abs((startDate.getTime() - currentDate.getTime()) / (oneDay)) / 7);
+        var diffWeeks = Math.round((currentDate - startDate) / (7 * 24 * 60 * 60 * 1000));
+
+        console.log("Weeks from start date: " + diffWeeks);
 
         callback(diffWeeks);
     });
@@ -111,6 +113,7 @@ function weeksFromStartDate(callback) {
 function numberOfTeams(callback) {
     var ref = db.ref("/flamelink/environments/production/content/team/en-US");
     ref.once("value", function (data) {
+        console.log("Number of teams: " + data.numChildren())
         callback(data.numChildren());
     });
 }
@@ -120,12 +123,16 @@ function findTeamForThisWeek(callback) {
         numberOfTeams(number => {
             // Team order is 1-indexed (for a friendlier CMS experience)
             let teamIndex = weeksValue % number + 1;
+
             var teamsRef = db.ref("/flamelink/environments/production/content/team/en-US");
 
             teamsRef.once("value", function (snapshot) {
                 snapshot.forEach(function (data) {
                     let teamObject = data.val();
                     if (teamObject.order == teamIndex) {
+
+                        console.log("Picked team: " + teamObject);
+
                         callback(teamObject);
                         return true;
                     }
