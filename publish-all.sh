@@ -1,0 +1,1 @@
+./publish-display-actions.sh && ./publish-handle-actions-immediately.sh && ./publish-handle-actions.sh
