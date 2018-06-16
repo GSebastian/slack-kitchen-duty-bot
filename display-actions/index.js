@@ -21,7 +21,7 @@ exports.handler = (event, context, callback) => {
                         "type": "button",
                         "value": "nudge",
                         "confirm": {
-                            "title": "Oh no! 🤮 I'll let the team know!",
+                            "title": "Oh no! I'll let the team know!",
                             "text": "Are you sure you want to do this?",
                             "ok_text": "Yeah, it\'s awful!",
                             "dismiss_text": "It can wait"

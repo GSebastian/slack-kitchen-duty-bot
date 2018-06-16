@@ -49,7 +49,7 @@ exports.handler = (event, context, callback) => {
                     method: "POST",
                     json: true,
                     headers: {
-                        "Authorization": "Bearer ***REMOVED***"
+                        "Authorization": "Bearer " + environment.getSlackToken()
                     },
                     body: {
                         user: team.members[i].slackUserId
@@ -61,7 +61,7 @@ exports.handler = (event, context, callback) => {
                             method: "POST",
                             json: true,
                             headers: {
-                                "Authorization": "Bearer ***REMOVED***"
+                                "Authorization": "Bearer " + environment.getSlackToken();
                             },
                             body: {
                                 channel: body.channel.id,
