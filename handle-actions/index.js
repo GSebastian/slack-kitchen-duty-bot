@@ -61,7 +61,7 @@ exports.handler = (event, context, callback) => {
                             method: "POST",
                             json: true,
                             headers: {
-                                "Authorization": "Bearer " + environment.getSlackToken();
+                                "Authorization": "Bearer " + environment.getSlackToken()
                             },
                             body: {
                                 channel: body.channel.id,
