@@ -1,6 +1,6 @@
 var request = require("request");
 var admin = require("firebase-admin");
-var environment = require("./environment.js");
+var environment = require(".../environment.js");
 
 admin.initializeApp({
     credential: admin.credential.cert(environment.getFirebaseServiceAccount()),
